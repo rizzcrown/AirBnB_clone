@@ -26,7 +26,7 @@ class HBNBCommand(cmd.Cmd):
             new_instance.save()
             print(new_instance.id)
 
-    def do_show(self, arg):
+    def show(self, arg):
         """Print the string representation in an instance"""
         args = arg.split()
         if not args:
@@ -36,14 +36,19 @@ class HBNBCommand(cmd.Cmd):
         elif len(args) < 2:
             print("** instance id missing **")
         else:
-            obj_key = args[0] + "." + args[1]
+            class_name = args[0]
+            instance_id = args[1]
             objects = storage.all()
-            if obj_key in objects:
-                print(objects[obj_key])
-            else:
+            instance_found = False
+            for obj in objects.value():
+                if obj.id == instance_id and (type(obj).__name__ == class_name or instance_id == obj.id):
+                    print(obj)
+                    instance_found= True
+                    break
+            if not instance_found:
                 print("** no instance found **")
     
-    def do_destroy(self, arg):
+    def destroy(self, arg):
         """Delete an instance based on the class name and id"""
         args = arg.split()
         if not args:
@@ -53,15 +58,31 @@ class HBNBCommand(cmd.Cmd):
         elif len(args) < 2:
             print("** instance is missing **")
         else:
-            obj_key = args[0] + "." + args[1]
+            class_name = args[0]
+            instance_id = arg[1]
             objects = storage.all()
-            if obj_key in objects:
-                del objects[obj_key]
-                storage.save()
+
+            if class_name == instance_id:
+                #  Deleting the instance by id only
+                instance_found = False
+                for obj in objects.value():
+                    if obj.id == instance_id:
+                        instance_found = True
+                        del objects[obj.__class__.__name__ + "." + obj.id]
+                        storage.save()
+                if not instance_found:
+                    print("** no instance found **")
             else:
-                print("** no instance found **")
-            
-    def do_all(self, arg):
+                # Delete the instance by class name and id 
+                obj_key = class_name + "." + instance_id
+                if obj_key in objects:
+                    del objects[obj_key]
+                    storage.save()
+                else:
+                    print("** no instance found **")
+
+
+    def all(self, arg):
         """Prints a string representation of all instances"""
         objects = storage.all()
         if not arg:
@@ -71,8 +92,13 @@ class HBNBCommand(cmd.Cmd):
         else:
             print("** class doesn't exist **")
     
-    def do_update(self, arg):
-        """Update an instance based on the class name and id """
+    def update(self, arg):
+        """ Update an instance based on the class name and id 
+            <class name>.update(<id>) - Update an instance based on its ID alone.
+            <class name>.update(<id>, <attribute name>, <attribute value>) - Update an instance based on its class name and ID.
+            <class name>.update(<id>, <dictionary representation>) - Update an instance based on its class 
+            name and ID using a dictionary representation.
+        """
         args = arg.split()
         if not args:
             print("** class name missing **")
@@ -85,17 +111,40 @@ class HBNBCommand(cmd.Cmd):
         elif len(args) < 4:
             print("** value missing **")
         else:
-            obj_key = args[0] + "." + args[1]
+            class_name = args[0]
+            instance_id = args[1]
+            update_dict = args[2]
+            try:
+                update_dict = eval(update_dict)
+                if type(update_dict) != dict:
+                    raise ValueError
+            except (SyntaxError, NameError, ValueError):
+                print("** invalid dictionary representation **")
+                return
+            
             objects = storage.all()
-            if obj_key in objects:
-                obj = objects[obj_key]
-                attr_name = args[2]
-                attr_value = args[3]
-                setattr(obj, attr_name, attr_value)
-                obj.save()
-            else:
+            instance_found = False
+            for obj in objects.value():
+                if obj.id == instance_id and (obj.__class__.__name__ == class_name or instance_id == obj.id):
+                    for key , value in update_dict.items():
+                        setattr(obj, key, value)
+                    obj.save()
+                    instance_found = True
+                    break
+            if not instance_found:
                 print("** no instance found **")
     
+    def count(self, arg):
+        """Prints the number of instances of a class"""
+        args = arg.split()
+        if not args:
+            print("** class name missing **")
+        elif args[0] not in storage:
+            print("** class doesn't exist **")
+        else:
+            class_name = args[0]
+            count = len([obj for obj in storage.all().values() if isinstance(obj, storage.classes[class_name])])
+            print(count)
 
     def do_quit(self, arg):
         """ Quit the program """
