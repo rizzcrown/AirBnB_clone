@@ -3,6 +3,7 @@
 import json
 
 class FileStorage:
+    """This class manages storage of hbnb models in JSON format"""
     __file_path = "file.json"
     __objects = {}#stores the classname.id :object/instance name as the key value pairs
 
@@ -33,8 +34,6 @@ class FileStorage:
             json.dump(obj_dict, file)
 
     def reload(self):
-        """deserializes the json file to __objects"""
-        
         """Loads storage dictionary from file"""
         from models.base_model import BaseModel
         from models.user import User
@@ -44,11 +43,35 @@ class FileStorage:
         from models.amenity import Amenity
         from models.review import Review
 
+        classes = {
+                    'BaseModel': BaseModel, 'User': User, 'Place': Place,
+                    'State': State, 'City': City, 'Amenity': Amenity,
+                    'Review': Review
+                  }
         try:
-            with open(self.__file_path, 'r') as file:
-                obj_dict = json.load(file)
+            temp = {}
+            with open(FileStorage.__file_path, 'r') as f:
+                temp = json.load(f)
+                for key, val in temp.items():
+                    self.all()[key] = classes[val['__class__']](**val)
+        except FileNotFoundError:
+            pass
+    
 
-            class_mappings = {
+    """
+    def reload(self):
+        # deserializes the json file to __objects 
+        
+        #Loads storage dictionary from file
+        from models.base_model import BaseModel
+        from models.user import User
+        from models.place import Place
+        from models.state import State
+        from models.city import City
+        from models.amenity import Amenity
+        from models.review import Review
+
+        class_mappings = {
 
                 'BaseModel': BaseModel,
                 'User': User,
@@ -59,6 +82,10 @@ class FileStorage:
                 'Review': Review
 
             }
+
+        try:
+            with open(self.__file_path, 'r') as file:
+                obj_dict = json.load(file)
 
             for key, value in obj_dict.items():
                 class_name, obj_id = key.split('.')
@@ -74,4 +101,6 @@ class FileStorage:
 
         except FileNotFoundError:
             pass
+            
+        """
             

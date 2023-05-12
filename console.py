@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 """ Console module """
 import cmd
-from os import path
+import os
+from posixpath import split
 import sys
-import token
 from models.base_model import BaseModel
 from models.__init__ import storage
 from models.user import User
@@ -13,18 +13,23 @@ from models.city import City
 from models.amenity import Amenity
 from models.review import Review
 
-sys.path.append(path.join(token.__file__, "Clone_Airbnb"))
-
 class HBNBCommand(cmd.Cmd):
-    prompt = '(hbnb) ' # The prompt for user input
+    """vontains the functionality of hbnb console"""
 
-   
+    # determines prompt for interactive and none interactive modes
+    prompt = '(hbnb) ' if sys.__stdin__.isatty() else ''# The prompt for user input
 
     classes = {
                 'BaseModel': BaseModel, 'User': User, 'Place': Place,
                'State': State, 'City': City, 'Amenity': Amenity,
                'Review': Review
               }
+    
+    types = {
+             'number_rooms': int, 'number_bathrooms': int,
+             'max_guest': int, 'price_by_night': int,
+             'latitude': float, 'longitude': float
+            }
 
     def do_create(self, args):
         """Create an object of any class"""
@@ -32,21 +37,27 @@ class HBNBCommand(cmd.Cmd):
             print("** class name missing **")
             return
         
-        if args not in HBNBCommand.classes:
+        args_list = args.split()  # Split the arguments into a list
+        
+        class_name = args_list[0]  # Get the class name from the first argument
+        
+        if class_name not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
         
         parameters = {}
-        for parameter in args[1:]:
+        
+        for parameter in args_list[1:]:
             attr = parameter.split("=")
-
-            parameters[attr[0]] = attr[1].replace("_", " ").strip('"')
-
-        new_instance = HBNBCommand.classes[args[0]]()
-
+            
+            if len(attr) >= 2:  # Check if attr has at least two elements
+                parameters[attr[0]] = attr[1].replace("_", " ").strip('"')
+        
+        new_instance = HBNBCommand.classes[class_name]()
+        
         for key, value in parameters.items():
             setattr(new_instance, key, value)
-
+        
         new_instance.save()
         print(new_instance.id)
 
