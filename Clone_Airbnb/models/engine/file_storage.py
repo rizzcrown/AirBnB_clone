@@ -1,38 +1,53 @@
+#!/usr/bin/python3
+"""This module defines a class to manage file storage for hbnb clone"""
 import json
+from models.base_model import BaseModel
+from models.user import User
+from models.place import Place
+from models.state import State
+from models.city import City
+from models.amenity import Amenity
+from models.review import Review
 
 class FileStorage:
     __file_path = "file.json"
-    __objects = {}
+    __objects = {}#stores the classname.id :object/instance name as the key value pairs
 
-    def all(self):
-        return self.__objects
+    def all(self, cls=None):
+        """returns a dictionary of models currently in storage """
+        if cls:
+            new_dict = {}
+            for key, value in self.__objects.items():
+                if cls.__name__ == value.__class__.__name__:
+                    new_dict[key] = value
+            return new_dict
+        return FileStorage.__objects
     
     def new(self, obj):
+        """Adds new object to storage dictionary"""
         key = f"{obj.__class__.__name__}.{obj.id}"
         self.__objects[key] = obj
 
     def save(self):
+        """serializes the __objects to json file(__file_path)"""
         obj_dict = {}
         for key, obj in self.__objects.items():
+            # converts instances/objects in __objects to dictionaries 
+            # the key represents the object id 
             obj_dict[key] = obj.to_dict()
 
         with open(self.__file_path, 'w') as file:
             json.dump(obj_dict, file)
 
     def reload(self):
+        """deserializes the json file to __objects"""
         try:
             with open(self.__file_path, 'r') as file:
                 obj_dict = json.load(file)
 
-            from models.user import User
-            from models.place import Place
-            from models.state import State
-            from models.city import City
-            from models.amenity import Amenity
-            from models.review import Review
-
             class_mappings = {
 
+                'BaseModel': BaseModel,
                 'User': User,
                 'Place': Place,
                 'State': State,
@@ -52,9 +67,7 @@ class FileStorage:
                 module = __import__('models.' + class_name, fromlist=[class_name])
                 cls = getattr(module, class_name)
                 obj = cls(**value)
-
-            self.__objects[key] = obj
-
+                self.__objects[key] = obj
 
         except FileNotFoundError:
             pass
