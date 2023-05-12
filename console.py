@@ -5,7 +5,7 @@ from os import path
 import sys
 import token
 from models.base_model import BaseModel
-from models import storage
+from models.__init__ import storage
 from models.user import User
 from models.place import Place
 from models.state import State
@@ -17,6 +17,8 @@ sys.path.append(path.join(token.__file__, "Clone_Airbnb"))
 
 class HBNBCommand(cmd.Cmd):
     prompt = '(hbnb) ' # The prompt for user input
+
+   
 
     classes = {
                 'BaseModel': BaseModel, 'User': User, 'Place': Place,
